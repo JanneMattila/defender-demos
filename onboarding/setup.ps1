@@ -75,27 +75,25 @@ $body = ConvertTo-Json @{
                 }
             }
             @{
-                "offeringType"          = "DefenderForServersGcp"
-                "arcAutoProvisioning"   = @{
+                "offeringType"        = "DefenderForServersGcp"
+                "subPlan"             = "P2"
+                "arcAutoProvisioning" = @{
                     "enabled"       = $true
                     "configuration" = @{}
                 }
-                "mdeAutoProvisioning"   = @{
+                "mdeAutoProvisioning" = @{
                     "enabled"       = $true
                     "configuration" = @{}
                 }
-                "vaAutoProvisioning"    = @{
+                "vaAutoProvisioning"  = @{
                     "enabled"       = $true
                     "configuration" = @{
                         "type" = "TVM"
                     }
                 }
-                "defenderForServers"    = @{
+                "defenderForServers"  = @{
                     "workloadIdentityProviderId" = "defender-for-servers"
                     "serviceAccountEmailAddress" = "microsoft-defender-for-servers@$gcp_project_id.iam.gserviceaccount.com"
-                }
-                "nativeCloudConnection" = @{
-                    "cloudRoleArn" = "microsoft-defender-containers@$gcp_project_id.iam.gserviceaccount.com"
                 }
             }
             @{
@@ -112,17 +110,7 @@ $body = ConvertTo-Json @{
                     "serviceAccountEmailAddress" = "microsoft-defender-containers@$gcp_project_id.iam.gserviceaccount.com"
                 }
             }
-            @{
-                "offeringType"                            = "DefenderForDatabasesGcp"
-                "defenderForDatabasesArcAutoProvisioning" = @{
-                    "workloadIdentityProviderId" = "defender-for-databases-arc-ap"
-                    "serviceAccountEmailAddress" = "microsoft-databases-arc-ap@$gcp_project_id.iam.gserviceaccount.com"
-                }
-                "arcAutoProvisioning"                     = @{
-                    "enabled"       = $true
-                    "configuration" = @{}
-                }
-            })
+        )
     }
 } -Depth 50
 $body
@@ -130,5 +118,5 @@ $body > body.json
 
 az rest `
     --method put `
-    --url  "https://management.azure.com/subscriptions/$azure_subscription_id/resourceGroups/$azure_resource_group_name/providers/Microsoft.Security/securityConnectors/$azure_connector_name`?api-version=2021-12-01-preview" `
+    --url  "https://management.azure.com/subscriptions/$azure_subscription_id/resourceGroups/$azure_resource_group_name/providers/Microsoft.Security/securityConnectors/$azure_connector_name`?api-version=2022-08-01-preview" `
     --body `@body.json
