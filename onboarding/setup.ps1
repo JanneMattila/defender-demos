@@ -110,6 +110,17 @@ $body = ConvertTo-Json @{
                     "serviceAccountEmailAddress" = "microsoft-defender-containers@$gcp_project_id.iam.gserviceaccount.com"
                 }
             }
+            @{
+                "offeringType"                            = "DefenderForDatabasesGcp"
+                "defenderForDatabasesArcAutoProvisioning" = @{
+                    "workloadIdentityProviderId" = "defender-for-databases-arc-ap"
+                    "serviceAccountEmailAddress" = "microsoft-databases-arc-ap@$gcp_project_id.iam.gserviceaccount.com"
+                }
+                "arcAutoProvisioning"                     = @{
+                    "enabled"       = $true
+                    "configuration" = @{}
+                }
+            }
         )
     }
 } -Depth 50
