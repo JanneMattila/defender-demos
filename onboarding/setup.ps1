@@ -14,6 +14,8 @@ $connector_identity_name = "microsoft defender for cloud" # The GCP workload ide
 az login -o table
 az account set --subscription $azure_subscription_name -o table
 $azure_subscription_id = $(az account show --query id -o tsv)
+$azure_tenant_id = $(az account show --query homeTenantId -o tsv)
+$workload_identity_pool_id = $azure_tenant_id.replace("-", "")
 
 gcloud auth login
 gcloud config set project $gcp_project_id
@@ -46,36 +48,80 @@ az group update --name $azure_resource_group_name `
 # https://learn.microsoft.com/en-us/rest/api/defenderforcloud/security-connectors
 
 $body = ConvertTo-Json @{
+    "name"       = "$azure_connector_name"
     "location"   = "$azure_location"
+    "type"       = "Microsoft.Security/securityConnectors"
+    "etag"       = "$((Get-Date).ToString("yyyyMMddHHmmss"))"
     "tags"       = @{
         "gcp_company_code"         = $gcp_project_labels_json.company_code
         "gcp_company_finance_code" = $gcp_project_labels_json.company_finance_code
     }
     "properties" = @{
         "environmentName"     = "GCP"
+        "hierarchyIdentifier" = "$gcp_project_number"
         "environmentData"     = @{
-            "environmentType"    = "GcpProject"
-            "organizationalData" = @{
-                "organizationMembershipType" = "Member"
-                "parentHierarchyId"          = "$gcp_project_parent"
-            }
-            "projectDetails"     = @{
+            "environmentType" = "GcpProject"
+            "projectDetails"  = @{
                 "projectId"              = "$gcp_project_id"
                 "projectNumber"          = "$gcp_project_number"
-                "workloadIdentityPoolId" = "$connector_identity_name"
+                "workloadIdentityPoolId" = "$workload_identity_pool_id"
             }
         }
-        "hierarchyIdentifier" = "$gcp_project_number"
         "offerings"           = @(@{
-                "offeringType" = "CspmMonitorGcp"
+                "offeringType"          = "CspmMonitorGcp"
+                "nativeCloudConnection" = @{
+                    "workloadIdentityProviderId" = "cspm"
+                    "serviceAccountEmailAddress" = "microsoft-defender-cspm@$gcp_project_id.iam.gserviceaccount.com"
+                }
             }
             @{
-                "offeringType" = "DefenderForServersGcp"
+                "offeringType"          = "DefenderForServersGcp"
+                "arcAutoProvisioning"   = @{
+                    "enabled"       = $true
+                    "configuration" = @{}
+                }
+                "mdeAutoProvisioning"   = @{
+                    "enabled"       = $true
+                    "configuration" = @{}
+                }
+                "vaAutoProvisioning"    = @{
+                    "enabled"       = $true
+                    "configuration" = @{
+                        "type" = "TVM"
+                    }
+                }
+                "defenderForServers"    = @{
+                    "workloadIdentityProviderId" = "defender-for-servers"
+                    "serviceAccountEmailAddress" = "microsoft-defender-for-servers@$gcp_project_id.iam.gserviceaccount.com"
+                }
+                "nativeCloudConnection" = @{
+                    "cloudRoleArn" = "microsoft-defender-containers@$gcp_project_id.iam.gserviceaccount.com"
+                }
             }
             @{
-                "offeringType"                    = "DefenderForContainersGcp"
-                "auditLogsAutoProvisioningFlag"   = $true
-                "policyAgentAutoProvisioningFlag" = $true
+                "offeringType"                      = "DefenderForContainersGcp"
+                "auditLogsAutoProvisioningFlag"     = $true
+                "policyAgentAutoProvisioningFlag"   = $true
+                "defenderAgentAutoProvisioningFlag" = $true
+                "dataPipelineNativeCloudConnection" = @{
+                    "workloadIdentityProviderId" = "containers-streams"
+                    "serviceAccountEmailAddress" = "ms-defender-containers-stream@$gcp_project_id.iam.gserviceaccount.com"
+                }
+                "nativeCloudConnection"             = @{
+                    "workloadIdentityProviderId" = "containers"
+                    "serviceAccountEmailAddress" = "microsoft-defender-containers@$gcp_project_id.iam.gserviceaccount.com"
+                }
+            }
+            @{
+                "offeringType"                            = "DefenderForDatabasesGcp"
+                "defenderForDatabasesArcAutoProvisioning" = @{
+                    "workloadIdentityProviderId" = "defender-for-databases-arc-ap"
+                    "serviceAccountEmailAddress" = "microsoft-databases-arc-ap@$gcp_project_id.iam.gserviceaccount.com"
+                }
+                "arcAutoProvisioning"                     = @{
+                    "enabled"       = $true
+                    "configuration" = @{}
+                }
             })
     }
 } -Depth 50
